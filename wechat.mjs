@@ -7,12 +7,12 @@ export function verifySignature(url,token,now=Date.now()){
 }
 const escape=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
 export function parseMessage(xml){
-  if(/<!DOCTYPE|<!ENTITY|<Encrypt\b/i.test(xml))throw Error('��֧������ģʽ���ݲ�֧�ּ��ܻص���');
-  if(!/^\s*<xml>[\s\S]*<\/xml>\s*$/.test(xml))throw Error('XML ��ʽ����');
+  if(/<!DOCTYPE|<!ENTITY|<Encrypt\b/i.test(xml))throw Error('仅支持明文模式，暂不支持加密回调。');
+  if(!/^\s*<xml>[\s\S]*<\/xml>\s*$/.test(xml))throw Error('XML 格式错误');
   const result={};for(const key of ['ToUserName','FromUserName','CreateTime','MsgType','Content','MsgId','Event']){
-    const found=[...xml.matchAll(new RegExp(`<${key}>([\\s\\S]*?)<\\/${key}>`,'g'))];if(found.length>1)throw Error('�ظ� XML �ֶ�');
-    let v=found[0]?.[1]||'';if(v.startsWith('<![CDATA[')&&v.endsWith(']]>'))v=v.slice(9,-3);else {if(v.includes('<'))throw Error('�Ƿ� XML �ֶ�');v=v.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');}result[key]=v;
+    const found=[...xml.matchAll(new RegExp(`<${key}>([\\s\\S]*?)<\\/${key}>`,'g'))];if(found.length>1)throw Error('重复 XML 字段');
+    let v=found[0]?.[1]||'';if(v.startsWith('<![CDATA[')&&v.endsWith(']]>'))v=v.slice(9,-3);else {if(v.includes('<'))throw Error('非法 XML 字段');v=v.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');}result[key]=v;
   }
-  if(!result.FromUserName||!result.ToUserName||!result.MsgType)throw Error('��Ϣȱ�ٱ�Ҫ�ֶ�');return result;
+  if(!result.FromUserName||!result.ToUserName||!result.MsgType)throw Error('消息缺少必要字段');return result;
 }
 export function replyXML(message,text){return `<xml><ToUserName>${escape(message.FromUserName)}</ToUserName><FromUserName>${escape(message.ToUserName)}</FromUserName><CreateTime>${Math.floor(Date.now()/1000)}</CreateTime><MsgType>text</MsgType><Content>${escape(text)}</Content></xml>`;}
